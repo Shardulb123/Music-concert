@@ -1,128 +1,84 @@
-// var express = require('express');
-// var router = express.Router();
-// var fs = require('fs')
-// const nodemailer = require("nodemailer");
-
-
-// /* GET home page. */
-// router.get('/', function(req, res, next) {
-//   res.render('index')
-// });
-
-// router.get('/about', function(req, res, next) {
-//   res.render('about');
-// });
-
-
-// router.get('/events', function(req, res, next) {
-//   res.render('gallery');
-// });
-
-// router.get('/contact', function(req, res, next) {
-//   res.render('contact');
-// });
-
-// router.post('/submit', function(req, res){
-//   let name = req.body.name
-//   let email = req.body.email
-//   // let number = req.body.numberfs.appendFile('data.txt', `name: ${name}, email: ${email}, number: ${number}\n`, function(e){
-//     fs.appendFile('data.txt',`name: ${name}, email: ${email}, number: ${number}\n`, function(e){
-//     if(e){
-//       console.log(e)
-//     }
-
-//     var transporter = nodemailer.createTransport({
-//       service: 'gmail',
-//       auth: {
-//         user: 'backendrunnervs@gmail.com',
-//         pass: 'qwerty_123'
-//       }
-//     });
-
-
-//     var mailOptions = {
-//       from: 'shardulbawankar4567@gmail.com',
-//       to: req.body.email,
-//       subject: 'tickets have been booked Successfully!',
-//       text: 'Congratulation you have successfully booked the ticket fot the upcoming event' 
-//     };
-
-//     transporter.sendMail(mailOptions, function(error, info){
-//       if(error){
-//         console.log(error);
-//       } else {
-//         res.render('success')
-//       }
-//     });
-//   })
-// })
-
-// router.get('/submit', (req, res)=>{
-//   res.render('success')
-// })
-
-// module.exports = router;
-
 var express = require('express');
 var router = express.Router();
-var fs = require('fs')
-const nodemailer = require("nodemailer");
+
+/* GET home page. */
+// router.get('/', function(req, res, next) {
+//   res.render('index', { title: 'Express' });
+// });
+
+var taskscollection = require('./users');
+
+const app = express();
+
+app.use("/public", express.static("public/"));
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index');
-});
-
-router.get('/about', function(req, res, next) {
-  res.render('about');
-});
-
-router.get('/events', function(req, res, next) {
-  res.render('gallery');
-});
-
-router.get('/contact', function(req, res, next) {
-  res.render('contact');
+  taskscollection.find({}, (err,docs) => {
+  res.render('index', {taskscollection: docs});
+})
 });
 
 
-router.post('/submit',function(req,res){
-  let name = req.body.name
-  let email = req.body.email
-  let number = req.body.number
-  fs.appendFile('data.txt',`name: ${name}, email: ${email}, number: ${number}\n`, function(e){
-    if(e){
-      console.log(e)
+router.get('/mytasks', (req, res) => {
+  taskscollection.find({}, (err,docs) => {
+    if(err){
+      console.log(err);
     }
-
-    var transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'backendrunnervs@gmail.com',
-        pass: 'qwerty_123'
-      }
-    });
-
-    
-    var mailOptions = {
-      from: 'shardulbawankar4567@gmail.com',
-      to: req.body.email,
-      subject: 'Successfully Tickets Booked',
-      text: 'Congratulation you have successfully booked the ticket for the upcoming event :)',
-    };
-
-    transporter.sendMail(mailOptions, function(error, info){
-      if (error) {
-        console.log(error);
-      } else {
-       res.render('success')
-      }
-    });
+    else{
+      res.render('index', {taskscollection: docs});
+    }
   })
 })
 
-router.get('/submit',(req,res)=>{
-  res.render('success')
+
+router.get('/edit/:id', (req, res) =>{
+  const id = req.params.id;
+  taskscollection.find({}, (err,docs) =>{
+    res.render('update', {taskscollection:docs, idupdate: id});
+  });
 })
 
+
+router.post('/edit/:id',(req, res) =>{
+  const id = req.params.id;
+  taskscollection.findByIdAndUpdate(id, {
+    content: req.body.task
+  }, err =>{
+    if(err) {
+      res,send(err);
+    } else {
+      res.redirect("/");
+    }
+  });
+});
+
+
+router.get('/remove/:id', (req, res) =>{
+  const id = req.params.id;
+  taskscollection.findByIdAndRemove(id, err => {
+    if(err){
+      res.send('ERROR OCCURED');
+    }
+    else{
+      res.redirect("/")
+    }
+  }) 
+})
+
+router.post('/submit', (req, res) =>{
+  taskscollection.create({
+    content: req.body.task
+  })
+  .then(() =>{
+    res.redirect("/");
+  })
+});
+
+
+
+
 module.exports = router;
+
+
+
